@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDataFromAPI } from "./redux/productSlice";
 import styled from "styled-components";
+import Modal from "./components/Modal";
+import Navbar from "./components/Navbar";
+import { addItemToCart } from "./redux/productSlice";
+import { Route, Routes, BrowserRouter } from "react-router-dom";
+import Cart from "./pages/Cart";
 const size = {
   mobileS: "320px",
   mobileM: "375px",
@@ -25,6 +30,7 @@ const Container = styled.div`
   height: 100vh;
   width: 100vw;
   max-width: 100%;
+  position: relative;
 `;
 const Wrapper = styled.div`
   height: 100vh;
@@ -50,7 +56,46 @@ const ProductTitle = styled.div`
   font-size: 15px;
   letter-spacing: 2px;
 `;
-const ProductDescription = styled.p``;
+
+const ProductDescriptionContainer = styled.div`
+  display: flex;
+  position: absolute;
+`;
+const ProductDescriptionMessage = styled.div`
+  background-color: lightgrey;
+  width: 200px;
+  font-weight: bolder;
+  display: flex;
+  opacity: 0;
+  align-items: center;
+  justify-content: center;
+`;
+const ProductDescription = styled.div`
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  top: 30px;
+  background-color: lightgray;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:hover {
+    ${ProductDescriptionMessage} {
+      opacity: 1;
+      animation-name: showDescription;
+      animation-fill-mode: forwards;
+      animation-duration: 3s;
+    }
+  }
+  @keyframes showDescription {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(30px);
+    }
+  }
+`;
 
 const ProductDetails = styled.div`
   display: flex;
@@ -88,6 +133,7 @@ const ProductOrder = styled.button`
 `;
 const Products = styled.div`
   text-align: center;
+  position: relative;
   @media (max-width: 560px) and (min-width: 400px) {
     width: 100%;
     display: flex;
@@ -182,6 +228,7 @@ const Products = styled.div`
     margin-bottom: 20px;
     height: 400px;
     display: flex;
+    margin: 10px 5px;
     flex-direction: column;
     ${ProductImageContainer} {
       height: 60%;
@@ -214,56 +261,120 @@ const Products = styled.div`
   }
 `;
 
+const ModalContainer = styled.div`
+  width: 100%;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  z-index: 999;
+  position: absolute;
+  top: 10px;
+  align-items: center;
+  animation-name: slide;
+  animation-duration: 1s;
+  animation-fill-mode: forwards;
+  @keyframes slide {
+    from {
+      transform: translateY(0px);
+    }
+    to {
+      transform: translateY(100px);
+    }
+  } ;
+`;
+
 function App() {
+  return (
+    <>
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cart" element={<Cart />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+export default App;
+
+const Home = () => {
   const dispatch = useDispatch();
+  const [modalControl, setModalControl] = useState(false);
   const { products, isLoading, isError } = useSelector(
     (state) => state.products
   );
   useEffect(() => {
     dispatch(fetchDataFromAPI());
   }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setModalControl(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [modalControl]);
+  const addItem = (product) => {
+    setModalControl(true);
+    dispatch(addItemToCart(product));
+  };
   return (
-    <Container>
-      <Wrapper>
-        {products.map((product) => {
-          return (
-            <Products>
-              <ProductImageContainer>
-                <Image src={product.image} />
-              </ProductImageContainer>
-              <ProductContentContainer>
-                <ProductTitle>{product.title}</ProductTitle>
-                <ProductDetails>
-                  <ProductCost>
-                    <label>Cost:</label>
-                    <div>
-                      <i className="fa fa-solid fa-dollar-sign"></i>
-                      {product.price}
-                    </div>
-                  </ProductCost>
-                  <ProductRating>
-                    <label>Rating:</label>
-                    <div>
-                      <i className="fa fa-solid fa-star"></i>
-                      {product.rating.rate}
-                    </div>
-                  </ProductRating>
-                  <ProductOrders>
-                    <label>Orders:</label>
-                    <div>
-                      <i className="fa fa-solid fa-bag-shopping"></i>
-                      {product.rating.count}
-                    </div>
-                  </ProductOrders>
-                </ProductDetails>
-                <ProductOrder>SHOP NOW</ProductOrder>
-              </ProductContentContainer>
-            </Products>
-          );
-        })}
-      </Wrapper>
-    </Container>
+    <>
+      <Container>
+        {modalControl && (
+          <ModalContainer>
+            <Modal />
+          </ModalContainer>
+        )}
+        <Wrapper>
+          {products.map((product) => {
+            return (
+              <Products>
+                <ProductDescriptionContainer>
+                  <ProductDescription>
+                    <i className="fa fa-solid fa-angle-down"></i>
+                  </ProductDescription>
+                  <ProductDescriptionMessage>
+                    Description
+                  </ProductDescriptionMessage>
+                </ProductDescriptionContainer>
+                <ProductImageContainer>
+                  <Image src={product.image} />
+                </ProductImageContainer>
+                <ProductContentContainer>
+                  <ProductTitle>{product.title}</ProductTitle>
+                  <ProductDetails>
+                    <ProductCost>
+                      <label>Cost:</label>
+                      <div>
+                        <i className="fa fa-solid fa-dollar-sign"></i>
+                        {product.price}
+                      </div>
+                    </ProductCost>
+                    <ProductRating>
+                      <label>Rating:</label>
+                      <div>
+                        <i className="fa fa-solid fa-star"></i>
+                        {product.rating.rate}
+                      </div>
+                    </ProductRating>
+                    <ProductOrders>
+                      <label>Orders:</label>
+                      <div>
+                        <i className="fa fa-solid fa-bag-shopping"></i>
+                        {product.rating.count}
+                      </div>
+                    </ProductOrders>
+                  </ProductDetails>
+                  <ProductOrder onClick={() => addItem(product)}>
+                    SHOP NOW
+                  </ProductOrder>
+                </ProductContentContainer>
+              </Products>
+            );
+          })}
+        </Wrapper>
+      </Container>
+    </>
   );
-}
-
-export default App;
+};

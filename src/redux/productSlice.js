@@ -21,12 +21,35 @@ const initialValue = {
   products: [],
   isLoading: false,
   isError: false,
+  cartItems: [],
+  count: 0,
+  total: 0,
 };
 
 export const productSlice = createSlice({
   name: "products",
   initialState: initialValue,
-  reducers: {},
+  reducers: {
+    addItemToCart: (state, { payload }) => {
+      state.cartItems.push(payload);
+      state.count += 1;
+      state.total += parseFloat(payload.price);
+      console.log(payload, state.cartItems.length, state.total, state.count);
+    },
+    removeItemFromCart: (state, { payload }) => {
+      if (payload) {
+        state.cartItems = state.cartItems.filter((item) => {
+          return item.id !== payload.id;
+        });
+        state.total -= Math.floor(parseFloat(payload.price));
+        state.count -= 1;
+      } else {
+        state.cartItems = [];
+        state.total = 0;
+        state.count = 0;
+      }
+    },
+  },
   extraReducers: {
     [fetchDataFromAPI.pending]: (state, action) => {
       state.products = [];
@@ -45,4 +68,5 @@ export const productSlice = createSlice({
   },
 });
 
+export const { addItemToCart, removeItemFromCart } = productSlice.actions;
 export default productSlice.reducer;
